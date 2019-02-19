@@ -12,6 +12,13 @@ from sklearn import metrics
 from collections import Counter
 from time import time
 
+from AE_layers import autoencoder, encoder0, decoder0, encoder1, decoder1
+from autoencoder_utilities import divide_by_class
+from stats_utilities import calc_inter_intra_variance
+
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 #Load data
 (X_train,y_train), (X_test, y_test) = mnist.load_data()
 
@@ -19,25 +26,8 @@ from time import time
 np.random.seed(7)
 np.seterr(divide='ignore', invalid='ignore')
 
-inds = y_train.argsort()
-y_train = y_train[inds]
-X_train = X_train[inds]
-num_per_class = Counter(y_train)
-counter=0
-X_train_divided = []
-for classNum in range(0,10):
-    X_train_divided.append(X_train[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
-
-inds = y_test.argsort()
-y_test = y_test[inds]
-X_test = X_test[inds]
-num_per_class = Counter(y_test)
-counter=0
-X_test_divided = []
-for classNum in range(0,10):
-    X_test_divided.append(X_test[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
+X_train_divided, num_per_class = divide_by_class(X_train, y_train)
+X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
 
 X_train, X_test = None, None
 
@@ -64,23 +54,22 @@ for classNum in range(0,10):
     reconstructed_img = decoders[classNum](encoded_repr)
     autoencoders.append(Model(input_img, reconstructed_img))
     autoencoders[classNum].compile(loss='mean_squared_error', optimizer='RMSprop')
-    #print(encoders[classNum].summary())
-    #print(decoders[classNum].summary())
 
 for classNum in range(0,10):
     autoencoders[classNum].load_weights("weights/weights-ae"+str(classNum)+".hdf5")
 
-per_class_average = []
-for classNum in range(0,10):
-    per_class_average.append(np.average(np.array(X_train_divided[classNum]).T, axis=1))
-global_average = np.average(per_class_average, axis=0)
 
-inter_group = []
+print("Creating training base for naive bayes model.")
+encoded_train = []
+y_train = []
 for classNum in range(0,10):
-    inter_group.append(np.sum(np.square(np.subtract(per_class_average[classNum],global_average))*num_per_class[classNum]))
-print('variance inter-class:',np.sum(inter_group))
+    encoded_train.append(encoders[classNum].predict(X_train_divided[classNum]))
+    y_train.extend([classNum]*len(X_train_divided[classNum]))
 
-intra_group = []
-for classNum in range(0,10):
-    intra_group.append(np.sum(np.sum(np.square(np.subtract(X_train_divided[classNum], per_class_average[classNum])), axis=0)))
-print('variance intra-class:',np.sum(intra_group))
+print(encoded_train[0][0])
+input()
+
+inter_variance, intra_variance = calc_inter_intra_variance(encoded_train, num_per_class)
+
+print('variance inter-class with 100 % data:',inter_variance/np.sum([num_per_class[numInClass] for numInClass in num_per_class]))
+print('variance intra-class with 100 % data:',intra_variance/np.sum([num_per_class[numInClass] for numInClass in num_per_class]))

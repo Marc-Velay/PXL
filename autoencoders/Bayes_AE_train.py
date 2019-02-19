@@ -13,16 +13,7 @@ from AE_layers import autoencoder, encoder0, decoder0, encoder1, decoder1
 import keras_callbacks
 from keras.callbacks import ModelCheckpoint
 
-from collections import Counter
-
-weightsFilepath="weights/weights-ae.hdf5"
-
-def compare_images(img1, img2):
-    # calculate the difference and its norms
-    diff = img1 - img2
-    err = np.sum((diff) ** 2)
-    err /= float(img1.shape[0] * img2.shape[1])
-    return err
+from autoencoder_utilities import compare_images, divide_by_class
 
 #Load data
 (X_train,y_train), (X_test, y_test) = mnist.load_data()
@@ -30,27 +21,9 @@ def compare_images(img1, img2):
 #For reproductability
 np.random.seed(7)
 
-inds = y_train.argsort()
-y_train = y_train[inds]
-X_train = X_train[inds]
-num_per_class = Counter(y_train)
-counter=0
-X_train_divided = []
-for classNum in range(0,10):
-    X_train_divided.append(X_train[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
 
-
-inds = y_test.argsort()
-y_test = y_test[inds]
-X_test = X_test[inds]
-num_per_class = Counter(y_test)
-counter=0
-X_test_divided = []
-for classNum in range(0,10):
-    X_test_divided.append(X_test[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
-
+X_train_divided, num_per_class = divide_by_class(X_train, y_train)
+X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
 X_train, X_test, y_train, y_test = None, None, None, None
 
 # normalize inputs from 0-255 to 0-1
@@ -82,30 +55,7 @@ for classNum in range(0,10):
 for classNum in range(0,10):
     autoencoders[classNum].load_weights("weights/weights-ae"+str(classNum)+".hdf5")
 
-'''
-encoded_imgs = encoders[0].predict(X_test_divided[0][:4])
-encoded_imgs = np.reshape(encoded_imgs, (4, 294, 1))
-decoded_imgs = decoders[0].predict(encoded_imgs)
-
-plt.figure(figsize=(20, 4))
-n=4
-for i in range(n):
-    # display original
-    ax = plt.subplot(2, n, i + 1)
-    plt.imshow(X_test_divided[0][i].reshape(28, 28))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-
-    # display reconstruction
-    ax = plt.subplot(2, n, i + 1 + n)
-    plt.imshow(decoded_imgs[i].reshape(28, 28))
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-plt.show()
-'''
-
+print("Creating training base for naive bayes model.")
 encoded_train = []
 y_train = []
 for classNum in range(0,10):
@@ -115,6 +65,7 @@ for classNum in range(0,10):
 bayes_model = GaussianNB()
 bayes_model.fit(encoded_train, y_train)
 
+print("Testing model prediction score.")
 encoded_test = []
 y_test = []
 for classNum in range(0,10):
@@ -123,6 +74,6 @@ for classNum in range(0,10):
 
 
 preds = bayes_model.predict(encoded_test)
-print(accuracy_score(y_test, preds))
+print("Model accuracy:", accuracy_score(y_test, preds))
 print(metrics.classification_report(y_test, preds))
 print(metrics.confusion_matrix(y_test, preds))

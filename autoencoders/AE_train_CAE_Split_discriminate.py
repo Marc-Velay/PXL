@@ -13,16 +13,7 @@ from keras.callbacks import ModelCheckpoint
 
 from collections import Counter
 
-weightsFilepath="weights/weights-ae.hdf5"
-
-def compare_images(img1, img2):
-    # calculate the difference and its norms
-    diff = img1 - img2  # elementwise for scipy arrays
-    err = np.sum((diff) ** 2)
-    err /= float(img1.shape[0] * img2.shape[1])
-    #m_norm = sum(sum(abs(diff)))  # Manhattan norm
-    #z_norm = norm(diff.ravel(), 0)  # Zero norm
-    return err#(m_norm, z_norm)
+from autoencoder_utilities import compare_images, divide_by_class
 
 #Load data
 (X_train,y_train), (X_test, y_test) = mnist.load_data()
@@ -30,26 +21,9 @@ def compare_images(img1, img2):
 #For reproductability
 np.random.seed(7)
 
-inds = y_train.argsort()
-y_train = y_train[inds]
-X_train = X_train[inds]
-num_per_class = Counter(y_train)
-counter=0
-X_train_divided = []
-for classNum in range(0,10):
-    X_train_divided.append(X_train[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
+X_train_divided, num_per_class = divide_by_class(X_train, y_train)
+X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
 
-
-inds = y_test.argsort()
-y_test = y_test[inds]
-X_test = X_test[inds]
-num_per_class = Counter(y_test)
-counter=0
-X_test_divided = []
-for classNum in range(0,10):
-    X_test_divided.append(X_test[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
 
 X_train, X_test, y_train, y_test = None, None, None, None
 

@@ -12,7 +12,11 @@ from keras.callbacks import ModelCheckpoint
 
 from collections import Counter
 
-weightsFilepath="weights/weights-ae.hdf5"
+from autoencoder_utilities import divide_by_class
+
+X_train_divided, num_per_class = divide_by_class(X_train, y_train)
+X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
+
 
 #Load data
 (X_train,y_train), (X_test, y_test) = mnist.load_data()
@@ -94,11 +98,8 @@ for classNum in range(0,10):
     epochs=25
 
     #Fit model
-    #train_history = autoencoders[classNum].fit(X_train_divided[classNum], X_train_divided[classNum], epochs=epochs, batch_size=128, verbose=2, callbacks=callbacks_list, validation_split=0.2)
+    train_history = autoencoders[classNum].fit(X_train_divided[classNum], X_train_divided[classNum], epochs=epochs, batch_size=128, verbose=2, callbacks=callbacks_list, validation_split=0.2)
 
-    # Basic accuracy score
-    #scores = autoencoder.evaluate(X_test, X_test, verbose=0)
-    #print("CNN accuracy on test set: %.2f%%" % (scores[1]*100))
     '''
     loss = train_history.history['loss']
     val_loss = train_history.history['val_loss']
@@ -119,7 +120,6 @@ print("Test Images")
 for i in range(10):
     plt.subplot(2, 10, i+1)
     plt.imshow(X_test_divided[4][i, ..., 0], cmap='gray')
-#plt.show()
 for classNum in range(0,10):
     pred = autoencoders[classNum].predict(X_test_divided[4])
     plt.figure(figsize=(20, 4))

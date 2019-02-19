@@ -62,9 +62,6 @@ epochs=25
 #Fit model
 train_history = autoencoder.fit(X_train, X_train, epochs=epochs, batch_size=128, verbose=2, callbacks=callbacks_list, validation_split=0.2)
 
-# Basic accuracy score
-#scores = autoencoder.evaluate(X_test, X_test, verbose=0)
-#print("CNN accuracy on test set: %.2f%%" % (scores[1]*100))
 '''
 loss = train_history.history['loss']
 val_loss = train_history.history['val_loss']
