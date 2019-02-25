@@ -12,7 +12,7 @@ from sklearn import metrics
 from collections import Counter
 from time import time
 
-from AE_layers import autoencoder, encoder0, decoder0, encoder1, decoder1
+from AE_layers import autoencoder, encoder0, decoder0, encoder1, decoder1, encoder2,decoder2
 from autoencoder_utilities import divide_by_class
 from stats_utilities import calc_inter_intra_variance
 
@@ -48,15 +48,15 @@ input_img = Input((28, 28, 1))
 encoders, decoders = [], []
 autoencoders = []
 for classNum in range(0,10):
-    encoders.append(encoder1())
-    decoders.append(decoder1())
+    encoders.append(encoder2())
+    decoders.append(decoder2())
     encoded_repr = encoders[classNum](input_img)
     reconstructed_img = decoders[classNum](encoded_repr)
     autoencoders.append(Model(input_img, reconstructed_img))
     autoencoders[classNum].compile(loss='mean_squared_error', optimizer='RMSprop')
 
 for classNum in range(0,10):
-    autoencoders[classNum].load_weights("weights/weights-ae"+str(classNum)+".hdf5")
+    autoencoders[classNum].load_weights("weights/sigm_weights-ae"+str(classNum)+".hdf5")
 
 
 print("Creating training base for naive bayes model.")

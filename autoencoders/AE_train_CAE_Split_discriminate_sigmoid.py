@@ -6,13 +6,14 @@ from keras import backend as K
 from keras.models import Model
 from keras.layers import Input
 from sklearn.metrics import accuracy_score
-from collections import Counter
-from keras.callbacks import ModelCheckpoint
-import random
 
-from autoencoder_utilities import compare_images, divide_by_class
 from AE_layers import autoencoder, encoder2, decoder2
 import keras_callbacks
+from keras.callbacks import ModelCheckpoint
+
+from collections import Counter
+
+from autoencoder_utilities import compare_images, divide_by_class
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -22,7 +23,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 #For reproductability
 np.random.seed(7)
-weights_base_name = "weights/few_weights-ae"
+weights_base_name = "weights/sigm_weights-ae"
 
 X_train_divided, num_per_class = divide_by_class(X_train, y_train)
 X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
@@ -38,8 +39,6 @@ for classNum in range(0,10):
 
 #Shape images so they fit the architecture of a CNN
 for classNum in range(0,10):
-    indices = random.sample(range(len(X_train_divided[classNum])), 60)
-    X_train_divided[classNum] = X_train_divided[classNum][indices]
     X_train_divided[classNum] = X_train_divided[classNum].reshape(X_train_divided[classNum].shape[0], 28, 28, 1).astype('float32')
     X_test_divided[classNum] = X_test_divided[classNum].reshape(X_test_divided[classNum].shape[0], 28, 28, 1).astype('float32')
 
@@ -59,36 +58,23 @@ for classNum in range(0,10):
     encoded_repr = encoders[classNum](input_img)
     reconstructed_img = decoders[classNum](encoded_repr)
     autoencoders.append(Model(input_img, reconstructed_img))
-    autoencoders[classNum].compile(loss='mean_squared_error', optimizer='Nadam')
-    #print(encoders[classNum].summary())
-    #print(decoders[classNum].summary())
+    autoencoders[classNum].compile(loss='mean_squared_error', optimizer='RMSprop')
+    print(encoders[classNum].summary())
+    print(decoders[classNum].summary())
 
     histories = keras_callbacks.Histories()
     checkpoint = ModelCheckpoint(weights_base_name+str(classNum)+".hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [histories, checkpoint]
 
-    epochs=500
+    epochs=25
 
     #Fit model
     train_history = autoencoders[classNum].fit(X_train_divided[classNum], X_train_divided[classNum], epochs=epochs, batch_size=128, verbose=2, callbacks=callbacks_list, validation_split=0.2)
 
-
-    '''
-    loss = train_history.history['loss']
-    val_loss = train_history.history['val_loss']
-    epochs = range(epochs)
-    plt.figure()
-    plt.plot(epochs, loss, 'bo', label='Training loss')
-    plt.plot(epochs, val_loss, 'b', label='Validation loss')
-    plt.title('Training and validation loss')
-    plt.legend()
-    plt.show()'''
-
-
 for classNum in range(0,10):
     autoencoders[classNum].load_weights(weights_base_name+str(classNum)+".hdf5")
 
-
+'''
 plt.figure(figsize=(20, 4))
 print("Test Images")
 for i in range(10):
@@ -103,7 +89,7 @@ for classNum in range(0,10):
         plt.subplot(2, 10, i+1)
         plt.imshow(pred[i, ..., 0], cmap='gray')
 plt.show()
-
+'''
 preds = []
 g_truth = []
 for index, classSet in enumerate(X_test_divided):

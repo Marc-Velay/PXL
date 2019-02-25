@@ -1,6 +1,6 @@
 import numpy as np
 from collections import Counter
-
+from sklearn.utils import shuffle
 
 def compare_images(img1, img2):
     # calculate the difference and its norms
@@ -21,3 +21,6 @@ def divide_by_class(X, y):
         X_divided.append(X[counter:counter+num_per_class[classNum]])
         counter+=num_per_class[classNum]
     return X_divided, num_per_class
+
+def shuffle_lists(list1, list2):
+    return shuffle(list1, list2)

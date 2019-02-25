@@ -14,9 +14,6 @@ from collections import Counter
 
 from autoencoder_utilities import divide_by_class
 
-X_train_divided, num_per_class = divide_by_class(X_train, y_train)
-X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
-
 
 #Load data
 (X_train,y_train), (X_test, y_test) = mnist.load_data()
@@ -24,26 +21,9 @@ X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
 #For reproductability
 np.random.seed(7)
 
-inds = y_train.argsort()
-y_train = y_train[inds]
-X_train = X_train[inds]
-num_per_class = Counter(y_train)
-counter=0
-X_train_divided = []
-for classNum in range(0,10):
-    X_train_divided.append(X_train[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
 
-
-inds = y_test.argsort()
-y_test = y_test[inds]
-X_test = X_test[inds]
-num_per_class = Counter(y_test)
-counter=0
-X_test_divided = []
-for classNum in range(0,10):
-    X_test_divided.append(X_test[counter:counter+num_per_class[classNum]])
-    counter+=num_per_class[classNum]
+X_train_divided, num_per_class = divide_by_class(X_train, y_train)
+X_test_divided, num_per_class_test = divide_by_class(X_test, y_test)
 
 X_train, X_test, y_train, y_test = None, None, None, None
 
@@ -90,7 +70,7 @@ for classNum in range(0,10):
     autoencoders[classNum].compile(loss='mean_squared_error', optimizer='RMSprop')
     print(encoders[classNum].summary())
     print(decoders[classNum].summary())
-
+    input()
     histories = keras_callbacks.Histories()
     checkpoint = ModelCheckpoint("weights/weights-ae"+str(classNum)+".hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [histories, checkpoint]
